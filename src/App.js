@@ -1,12 +1,9 @@
 import React, { useCallback, useState } from "react";
 import "./styles.css";
-import {
-  utils,
-  Responsive as GridLayout,
-  WidthProvider,
-} from "react-grid-layout";
+import GridLayout, { utils } from "react-grid-layout";
 import { Wrapper, Placeholder as PlaceholderRoot } from "./Wrapper";
 import { calcGridItemPosition } from "./calculateUtils";
+import { withSize } from "react-sizeme";
 import Menu from "@material-ui/core/Menu";
 import MenuItem from "@material-ui/core/MenuItem";
 import { v4 as uuid } from "uuid";
@@ -15,6 +12,7 @@ import produce from "immer";
 const GL = GridLayout;
 const itemsMargin = [10, 10];
 const CONTAINER_PADDING = [10, 10];
+const COL_COUNT = 4;
 
 const FIELD_TYPES = ["HEADER", "TEXT_FIELD", "CHECKLIST", "SECTION"];
 
@@ -86,30 +84,17 @@ function Placeholder({
 }
 
 const GridBase = function ({
-  width,
-  layout: layoutResponsive,
+  size,
+  layout,
   onLayoutChange,
   children,
   onAddItem,
-  cols: responsiveCols,
+  cols,
   isChild,
   containerPadding,
   rowHeight,
   ...props
 }) {
-  const cols = GridLayout.utils.getColsFromBreakpoint(
-    GridLayout.utils.getBreakpointFromWidth(responsiveCols, width),
-    responsiveCols
-  );
-  const layout = GridLayout.utils.findOrGenerateResponsiveLayout(
-    layoutResponsive,
-    responsiveCols,
-    GridLayout.utils.getBreakpointFromWidth(responsiveCols, width),
-    GridLayout.utils.getBreakpointFromWidth(responsiveCols, width),
-    cols,
-    null
-  );
-  console.log(layout)
   const [placeholderPosition, setPlaceholderPosition] = useState();
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -125,7 +110,8 @@ const GridBase = function ({
     (e) => {
       if (!!menuAnchorEl) return;
       const columnWidth =
-        (width - (cols - 1) * itemsMargin[0] - 2 * containerPadding[0]) / cols;
+        (size.width - (cols - 1) * itemsMargin[0] - 2 * containerPadding[0]) /
+        cols;
       const columnWidthWithMargin = columnWidth + itemsMargin[0];
       const itemHeightWithMargin = rowHeight + itemsMargin[1];
       const rect = e.currentTarget.getBoundingClientRect();
@@ -161,7 +147,7 @@ const GridBase = function ({
         setPlaceholderPosition(position);
       }
     },
-    [placeholderPosition, width, layout, menuAnchorEl, cols]
+    [placeholderPosition, size, layout, menuAnchorEl, cols]
   );
   const shouldRenderPlaceholder =
     !isDragging && !isResizing && placeholderPosition;
@@ -184,7 +170,7 @@ const GridBase = function ({
           anchorEl={menuAnchorEl}
           onClick={handlePlaceholderClick}
           placeholderPosition={placeholderPosition}
-          width={width}
+          width={size.width}
           cols={cols}
           containerPadding={containerPadding}
           rowHeight={rowHeight}
@@ -193,8 +179,8 @@ const GridBase = function ({
       <GL
         {...props}
         className="layout"
-        layout={layoutResponsive}
-        cols={responsiveCols}
+        layout={layout}
+        cols={cols}
         rowHeight={rowHeight}
         measureBeforeMount
         isResizable
@@ -203,10 +189,7 @@ const GridBase = function ({
         onDrag={(...args) => {
           // console.log(args);
         }}
-        onLayoutChange={(l) => {
-          onLayoutChange(initialLayout);
-          // console.log("onLayoutChange", l);
-        }}
+        onLayoutChange={onLayoutChange}
         onDragStart={() => {
           setIsDragging(true);
         }}
@@ -219,7 +202,7 @@ const GridBase = function ({
         onResizeStop={() => {
           setIsResizing(false);
         }}
-        width={width}
+        width={size.width}
       >
         {children}
       </GL>
@@ -227,7 +210,7 @@ const GridBase = function ({
   );
 };
 
-const GridWithSize = WidthProvider(GridBase);
+const GridWithSize = withSize({ monitorHeight: true })(GridBase);
 
 function Grid() {
   const [items, setItems] = useState(initialItems);
@@ -262,59 +245,47 @@ function Grid() {
     setItems(newItems);
   };
   return (
-    <>
-      <button
-        onClick={() => {
-          setLayout(initialLayout);
-        }}
-      >
-        reset
-      </button>
-      <GridWithSize
-        onLayoutChange={setLayout}
-        onAddItem={handleAddItem}
-        style={{ minHeight: CONTAINER_PADDING[0] * 2 + ITEM_HEIGHT }}
-        draggableCancel=".no-drag"
-        compactType={null}
-        containerPadding={CONTAINER_PADDING}
-        rowHeight={ITEM_HEIGHT}
-        layout={{ l: layout, s: layout }}
-        breakpoints={{ l: 700, s: 0 }}
-        cols={{ l: 4, s: 2 }}
-        measureBeforeMount={true}
-      >
-        {items.map((i) => {
-          // if (i.type === "SECTION") {
-          //   const layoutItem = layout.find((x) => x.i === i.id);
-          //   return (
-          //     <div style={{ width: "100%", height: "100%" }} key={i.id}>
-          //       <GridWithSize
-          //         containerPadding={[10, 0]}
-          //         isChild
-          //         breakpoints={{ l: 1200, s: 0 }}
-          //         cols={{l: layoutItem.w, s: 2}}
-          //         style={{ minHeight: layoutItem.h * ITEM_HEIGHT - 10 }}
-          //         rowHeight={ITEM_HEIGHT - 10}
-          //         onLayoutChange={(childLayout) => {
-          //           handleChildLayout(childLayout, i.id);
-          //         }}
-          //         onAddItem={(type, pos) => handleAddChildItem(type, pos, i.id)}
-          //         layout={i.layout}
-          //         compactType="vertical"
-          //       >
-          //         {i.items.map((y) => (
-          //           <div className={"no-drag"} key={y.id}>
-          //             {y.type}
-          //           </div>
-          //         ))}
-          //       </GridWithSize>
-          //     </div>
-          //   );
-          // }
-          return <div key={i.id}>{i.type}</div>;
-        })}
-      </GridWithSize>
-    </>
+    <GridWithSize
+      onLayoutChange={setLayout}
+      onAddItem={handleAddItem}
+      layout={layout}
+      style={{ minHeight: CONTAINER_PADDING[0] * 2 + ITEM_HEIGHT }}
+      cols={COL_COUNT}
+      draggableCancel=".no-drag"
+      compactType={null}
+      containerPadding={CONTAINER_PADDING}
+      rowHeight={ITEM_HEIGHT}
+    >
+      {items.map((i) => {
+        if (i.type === "SECTION") {
+          const layoutItem = layout.find((x) => x.i === i.id);
+          return (
+            <div style={{ width: "100%", height: "100%" }} key={i.id}>
+              <GridWithSize
+                containerPadding={[10, 0]}
+                isChild
+                cols={layoutItem.w}
+                style={{ minHeight: layoutItem.h * ITEM_HEIGHT - 10 }}
+                rowHeight={ITEM_HEIGHT - 10}
+                onLayoutChange={(childLayout) => {
+                  handleChildLayout(childLayout, i.id);
+                }}
+                onAddItem={(type, pos) => handleAddChildItem(type, pos, i.id)}
+                layout={i.layout}
+                compactType="vertical"
+              >
+                {i.items.map((y) => (
+                  <div className={"no-drag"} key={y.id}>
+                    {y.type}
+                  </div>
+                ))}
+              </GridWithSize>
+            </div>
+          );
+        }
+        return <div key={i.id}>{i.type}</div>;
+      })}
+    </GridWithSize>
   );
 }
 
