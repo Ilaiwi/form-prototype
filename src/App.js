@@ -19,14 +19,14 @@ const initialItems = [
   { id: uuid(), type: FIELD_TYPES[0] },
   { id: uuid(), type: FIELD_TYPES[1] },
   { id: uuid(), type: FIELD_TYPES[2] },
-  { id: uuid(), type: FIELD_TYPES[1] }
+  { id: uuid(), type: FIELD_TYPES[1] },
 ];
 
 const initialLayout = [
   { i: initialItems[0].id, x: 0, y: 0, w: 1, h: 1 },
   { i: initialItems[1].id, x: 1, y: 0, w: 3, h: 1 },
   { i: initialItems[2].id, x: 3, y: 1, w: 1, h: 1 },
-  { i: initialItems[3].id, x: 0, y: 1, w: 1, h: 1 }
+  { i: initialItems[3].id, x: 0, y: 1, w: 1, h: 1 },
 ];
 
 const ITEM_HEIGHT = 60;
@@ -37,7 +37,7 @@ function Placeholder({
   anchorEl,
   onClick,
   width,
-  onAddItem
+  onAddItem,
 }) {
   const pos = calcGridItemPosition(
     {
@@ -45,14 +45,14 @@ function Placeholder({
       containerPadding: containerPadding,
       containerWidth: width,
       cols: COL_COUNT,
-      rowHeight: ITEM_HEIGHT
+      rowHeight: ITEM_HEIGHT,
     },
     placeholderPosition.x,
     placeholderPosition.y,
     placeholderPosition.w,
     placeholderPosition.h
   );
-  const handleOptionClick = type => {
+  const handleOptionClick = (type) => {
     onAddItem(type, placeholderPosition);
     onClose();
   };
@@ -69,7 +69,7 @@ function Placeholder({
         onClose={onClose}
         variant="selectedMenu"
       >
-        {FIELD_TYPES.map(i => (
+        {FIELD_TYPES.map((i) => (
           <MenuItem key={i} onClick={() => handleOptionClick(i)}>
             {i}
           </MenuItem>
@@ -79,7 +79,7 @@ function Placeholder({
   );
 }
 
-const Grid = withSize({ monitorHeight: true })(function({ size }) {
+const Grid = withSize({ monitorHeight: true })(function ({ size }) {
   const [layout, setLayout] = useState(initialLayout);
   const [placeholderPosition, setPlaceholderPosition] = useState();
   const [isDragging, setIsDragging] = useState(false);
@@ -90,12 +90,11 @@ const Grid = withSize({ monitorHeight: true })(function({ size }) {
   const handleMenuClose = () => {
     setMenuAnchorEl(null);
   };
-  const handlePlaceholderClick = event => {
-    console.log("click");
+  const handlePlaceholderClick = (event) => {
     setMenuAnchorEl(event.currentTarget);
   };
   const handleMouseMove = useCallback(
-    e => {
+    (e) => {
       if (!!menuAnchorEl) return;
       const columnWidth =
         (size.width -
@@ -125,7 +124,7 @@ const Grid = withSize({ monitorHeight: true })(function({ size }) {
           position.y === placeholderPosition.y
         )
           return;
-        if (layout.find(i => utils.collides(position, i))) {
+        if (layout.find((i) => utils.collides(position, i))) {
           setPlaceholderPosition(undefined);
           return;
         }
@@ -148,7 +147,12 @@ const Grid = withSize({ monitorHeight: true })(function({ size }) {
     setPlaceholderPosition(undefined);
   };
   return (
-    <Wrapper onMouseMove={handleMouseMove}>
+    <Wrapper
+      onMouseLeave={() => {
+        setPlaceholderPosition(undefined);
+      }}
+      onMouseMove={handleMouseMove}
+    >
       {shouldRenderPlaceholder ? (
         <Placeholder
           onAddItem={handleAddItem}
@@ -172,7 +176,7 @@ const Grid = withSize({ monitorHeight: true })(function({ size }) {
         onDrag={(...args) => {
           // console.log(args);
         }}
-        onLayoutChange={layout => {
+        onLayoutChange={(layout) => {
           // console.log(layout);
           setLayout(layout);
         }}
@@ -190,7 +194,7 @@ const Grid = withSize({ monitorHeight: true })(function({ size }) {
         }}
         width={size.width}
       >
-        {items.map(i => (
+        {items.map((i) => (
           <div key={i.id}>{i.type}</div>
         ))}
       </GL>
