@@ -1,8 +1,9 @@
 import styled from "styled-components";
 export const Wrapper = styled.div`
-  background-color: #ffffff;
-  border: 1px solid #d6dce4;
+  background-color: ${(p) => (p.isChild ? "initial" : "#ffffff")};
+  border: ${(p) => (p.isChild ? "initial" : "1px solid #d6dce4")};
   border-radius: 5px;
+  width: 100%;
   .react-grid-layout {
     position: relative;
     transition: height 200ms ease;
